@@ -1,0 +1,39 @@
+# 文件名: .github/workflows/sync-upstream.yml
+name: Sync Upstream
+
+on:
+  schedule:
+    # 每天 UTC 时间 0 点执行一次 (可以根据需要修改)
+    - cron: '0 0 * * *'
+  workflow_dispatch:
+    # 允许手动触发
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Fork
+        uses: actions/checkout@v4
+        with:
+          # 使用 Personal Access Token (PAT) 以触发后续的 Cloudflare Pages 构建
+          # GITHUB_TOKEN 无法触发下游的 Actions
+          token: ${{ secrets.PAT }} 
+          # 获取所有历史记录，以便进行合并
+          fetch-depth: 0
+
+      - name: Sync Fork with Upstream
+        run: |
+          # 添加上游仓库作为远程源
+          git remote add upstream https://github.com/ChatGPTNextWeb/NextChat.git
+          
+          # 从上游仓库获取最新内容
+          git fetch upstream
+          
+          # 切换到你的 main 分支
+          git checkout main
+          
+          # 将上游的 main 分支合并到你的 main 分支
+          git merge upstream/main
+          
+          # 将更新推送到你的 Fork 仓库
+          git push origin main
